@@ -28,6 +28,7 @@ import {
   getSlashCommandDropdownOptions,
 } from "./getSuggestion";
 import { handleImageFile } from "./imageUtils";
+import { insertHighlightedCodeBlock } from "./insertHighlightedCodeBlock";
 
 export function getPlaceholderText(
   placeholder: TipTapEditorProps["placeholder"],
@@ -91,6 +92,8 @@ export function createEditorConfig(options: {
   const codeToEdit = useAppSelector((store) => store.editModeState.codeToEdit);
   const isInEdit = useAppSelector((store) => store.session.isInEdit);
   const isInEditRef = useUpdatingRef(isInEdit);
+  const sessionId = useAppSelector((store) => store.session.id);
+  const sessionIdRef = useUpdatingRef(sessionId);
 
   const inSubmenuRef = useRef<string | undefined>(undefined);
   const inDropdownRef = useRef(false);
@@ -387,12 +390,21 @@ export function createEditorConfig(options: {
     editable: !isStreaming || props.isMainInput,
   });
 
-  const onEnter = (modifiers: InputModifiers) => {
+  const onEnter = async (modifiers: InputModifiers) => {
     if (!editor) {
       return;
     }
     if (isStreamingRef.current || (codeToEdit.length === 0 && isInEdit)) {
       return;
+    }
+
+    if (props.isMainInput) {
+      const result = await ideMessenger.request("getAutoAttachSelection", {
+        sessionId: sessionIdRef.current,
+      });
+      if (result.status === "success" && result.content) {
+        insertHighlightedCodeBlock(editor, result.content, props.inputId);
+      }
     }
 
     const json = editor.getJSON();

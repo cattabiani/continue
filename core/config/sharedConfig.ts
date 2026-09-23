@@ -19,6 +19,7 @@ export const sharedConfigSchema = z
     readResponseTTS: z.boolean(),
     promptPath: z.string(),
     useCurrentFileAsContext: z.boolean(),
+    useCurrentSelectionAsContext: z.boolean(),
     enableExperimentalTools: z.boolean(),
     onlyUseSystemMessageTools: z.boolean(),
     codebaseToolCallingOnly: z.boolean(),
@@ -181,6 +182,10 @@ export function modifyAnyConfigWithSharedConfig<
   if (sharedConfig.useCurrentFileAsContext !== undefined) {
     configCopy.experimental.useCurrentFileAsContext =
       sharedConfig.useCurrentFileAsContext;
+  }
+  if (sharedConfig.useCurrentSelectionAsContext !== undefined) {
+    configCopy.experimental.useCurrentSelectionAsContext =
+      sharedConfig.useCurrentSelectionAsContext;
   }
 
   if (sharedConfig.onlyUseSystemMessageTools !== undefined) {

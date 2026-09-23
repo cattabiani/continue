@@ -57,6 +57,8 @@ export function UserSettingsSection() {
   const disableSessionTitles = config.disableSessionTitles ?? false;
   const useCurrentFileAsContext =
     config.experimental?.useCurrentFileAsContext ?? false;
+  const useCurrentSelectionAsContext =
+    config.experimental?.useCurrentSelectionAsContext ?? false;
   const enableExperimentalTools =
     config.experimental?.enableExperimentalTools ?? false;
   const onlyUseSystemMessageTools =
@@ -245,6 +247,15 @@ export function UserSettingsSection() {
                     value={useCurrentFileAsContext}
                     onChange={(value) =>
                       handleUpdate({ useCurrentFileAsContext: value })
+                    }
+                  />
+                  <UserSetting
+                    type="toggle"
+                    title="Auto-attach Current Selection"
+                    description=" the current text selection (if any) is automatically attached to every outgoing message, instead of pressing Cmd/Ctrl+Shift+L manually. Unchanged selections are not resent."
+                    value={useCurrentSelectionAsContext}
+                    onChange={(value) =>
+                      handleUpdate({ useCurrentSelectionAsContext: value })
                     }
                   />
                   <UserSetting

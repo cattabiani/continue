@@ -21,7 +21,9 @@ import { ApplyManager } from "../apply";
 import { VerticalDiffManager } from "../diff/vertical/manager";
 import { addCurrentSelectionToEdit } from "../quickEdit/AddCurrentSelection";
 import EditDecorationManager from "../quickEdit/EditDecorationManager";
+import { getRangeInFileWithContents } from "../util/addCode";
 import { handleLLMError } from "../util/errorHandling";
+import { shouldSendSelection } from "../util/selectionAutoAttachTracker";
 import { showTutorial } from "../util/tutorial";
 import { getExtensionUri } from "../util/vscode";
 import { VsCodeIde } from "../VsCodeIde";
@@ -190,6 +192,25 @@ export class VsCodeMessenger {
           msg.data.text,
         );
       });
+    });
+    this.onWebview("getAutoAttachSelection", async (msg) => {
+      const configHandler = await configHandlerPromise;
+      const { config } = await configHandler.loadConfig();
+      if (!config?.experimental?.useCurrentSelectionAsContext) {
+        return null;
+      }
+
+      const rangeInFileWithContents = getRangeInFileWithContents(false);
+      if (!rangeInFileWithContents) {
+        return null;
+      }
+
+      const shouldSend = shouldSendSelection(
+        msg.data.sessionId,
+        rangeInFileWithContents.filepath,
+        rangeInFileWithContents.contents,
+      );
+      return shouldSend ? rangeInFileWithContents : null;
     });
     this.onWebview("edit/addCurrentSelection", async (msg) => {
       const verticalDiffManager = await this.verticalDiffManagerPromise;
