@@ -208,6 +208,7 @@ export class VsCodeMessenger {
       const shouldSend = shouldSendSelection(
         msg.data.sessionId,
         rangeInFileWithContents.filepath,
+        rangeInFileWithContents.range,
         rangeInFileWithContents.contents,
       );
       return shouldSend ? rangeInFileWithContents : null;
