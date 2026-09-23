@@ -52,6 +52,10 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
     { sessionId: string },
     RangeInFileWithContents | null,
   ];
+  recordAutoAttachSelectionSent: [
+    { sessionId: string; selection: RangeInFileWithContents },
+    void,
+  ];
   "edit/clearDecorations": [undefined, void];
   "session/share": [{ sessionId: string }, void];
 };

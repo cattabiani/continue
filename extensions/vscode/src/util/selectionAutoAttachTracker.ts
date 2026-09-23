@@ -15,23 +15,32 @@ function hash(range: Range, contents: string): string {
 }
 
 /**
- * Returns true (and records the hash) if this (range, contents) for
- * `filepath` within `sessionId` has not already been sent, or has
- * changed since the last time it was sent in that same session. Returns
- * false if it's an exact repeat of the last send for that (session,
- * file) pair.
+ * Read-only check: is this (range, contents) for `filepath` within
+ * `sessionId` an exact repeat of the last selection actually recorded
+ * as sent for that (session, file) pair? Does not mutate any state.
  */
-export function shouldSendSelection(
+export function isDuplicateSelection(
   sessionId: string,
   filepath: string,
   range: Range,
   contents: string,
 ): boolean {
   const key = `${sessionId}:${filepath}`;
-  const newHash = hash(range, contents);
-  if (lastSentHashBySessionAndFile.get(key) === newHash) {
-    return false;
-  }
-  lastSentHashBySessionAndFile.set(key, newHash);
-  return true;
+  return lastSentHashBySessionAndFile.get(key) === hash(range, contents);
+}
+
+/**
+ * Records that this (range, contents) for `filepath` within
+ * `sessionId` was actually sent, so a later identical selection is
+ * recognized as a duplicate by `isDuplicateSelection`. Call this only
+ * once the message is confirmed to actually go out, not merely offered.
+ */
+export function recordSelectionSent(
+  sessionId: string,
+  filepath: string,
+  range: Range,
+  contents: string,
+): void {
+  const key = `${sessionId}:${filepath}`;
+  lastSentHashBySessionAndFile.set(key, hash(range, contents));
 }
