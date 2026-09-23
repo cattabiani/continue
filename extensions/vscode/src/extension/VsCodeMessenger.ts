@@ -23,10 +23,6 @@ import { addCurrentSelectionToEdit } from "../quickEdit/AddCurrentSelection";
 import EditDecorationManager from "../quickEdit/EditDecorationManager";
 import { getRangeInFileWithContents } from "../util/addCode";
 import { handleLLMError } from "../util/errorHandling";
-import {
-  isDuplicateSelection,
-  recordSelectionSent,
-} from "../util/selectionAutoAttachTracker";
 import { showTutorial } from "../util/tutorial";
 import { getExtensionUri } from "../util/vscode";
 import { VsCodeIde } from "../VsCodeIde";
@@ -203,27 +199,7 @@ export class VsCodeMessenger {
         return null;
       }
 
-      const rangeInFileWithContents = getRangeInFileWithContents(false);
-      if (!rangeInFileWithContents) {
-        return null;
-      }
-
-      const isDuplicate = isDuplicateSelection(
-        msg.data.sessionId,
-        rangeInFileWithContents.filepath,
-        rangeInFileWithContents.range,
-        rangeInFileWithContents.contents,
-      );
-      return isDuplicate ? null : rangeInFileWithContents;
-    });
-    this.onWebview("recordAutoAttachSelectionSent", async (msg) => {
-      const { sessionId, selection } = msg.data;
-      recordSelectionSent(
-        sessionId,
-        selection.filepath,
-        selection.range,
-        selection.contents,
-      );
+      return getRangeInFileWithContents(false) ?? null;
     });
     this.onWebview("edit/addCurrentSelection", async (msg) => {
       const verticalDiffManager = await this.verticalDiffManagerPromise;

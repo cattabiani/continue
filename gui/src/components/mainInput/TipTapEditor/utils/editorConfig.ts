@@ -8,7 +8,7 @@ import Text from "@tiptap/extension-text";
 import { Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { useEditor } from "@tiptap/react";
-import { InputModifiers, RangeInFileWithContents } from "core";
+import { InputModifiers } from "core";
 import { modelSupportsImages } from "core/llm/autodetect";
 import { useRef } from "react";
 import { IIdeMessenger } from "../../../../context/IdeMessenger";
@@ -92,8 +92,6 @@ export function createEditorConfig(options: {
   const codeToEdit = useAppSelector((store) => store.editModeState.codeToEdit);
   const isInEdit = useAppSelector((store) => store.session.isInEdit);
   const isInEditRef = useUpdatingRef(isInEdit);
-  const sessionId = useAppSelector((store) => store.session.id);
-  const sessionIdRef = useUpdatingRef(sessionId);
 
   const inSubmenuRef = useRef<string | undefined>(undefined);
   const inDropdownRef = useRef(false);
@@ -398,13 +396,12 @@ export function createEditorConfig(options: {
       return;
     }
 
-    let autoAttachedSelection: RangeInFileWithContents | null = null;
     if (props.isMainInput) {
-      const result = await ideMessenger.request("getAutoAttachSelection", {
-        sessionId: sessionIdRef.current,
-      });
+      const result = await ideMessenger.request(
+        "getAutoAttachSelection",
+        undefined,
+      );
       if (result.status === "success" && result.content) {
-        autoAttachedSelection = result.content;
         insertHighlightedCodeBlock(editor, result.content, props.inputId);
       }
     }
@@ -414,17 +411,6 @@ export function createEditorConfig(options: {
     // Don't do anything if input box doesn't have valid content
     if (!hasValidEditorContent(json)) {
       return;
-    }
-
-    // Only now that the message is confirmed to actually go out do we
-    // record the auto-attached selection as sent, so a failed/aborted
-    // send never poisons the dedup state for a selection that was
-    // merely offered, not delivered.
-    if (autoAttachedSelection) {
-      ideMessenger.post("recordAutoAttachSelectionSent", {
-        sessionId: sessionIdRef.current,
-        selection: autoAttachedSelection,
-      });
     }
 
     if (props.isMainInput) {
