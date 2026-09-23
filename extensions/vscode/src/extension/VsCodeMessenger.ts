@@ -33,6 +33,12 @@ import { VsCodeExtension } from "./VsCodeExtension";
 type ToIdeOrWebviewFromCoreProtocol = ToIdeFromCoreProtocol &
   ToWebviewFromCoreProtocol;
 
+// Selections longer than this are not auto-attached to outgoing messages,
+// since they're more likely an accidental huge/"select all" selection than
+// an intentional snippet, and would otherwise be silently resent on every
+// message.
+const MAX_AUTO_ATTACH_SELECTION_LINES = 500;
+
 /**
  * A shared messenger class between Core and Webview
  * so we don't have to rewrite some of the handlers
@@ -199,7 +205,23 @@ export class VsCodeMessenger {
         return null;
       }
 
-      return getRangeInFileWithContents(false) ?? null;
+      const rangeInFileWithContents = getRangeInFileWithContents(false);
+      if (!rangeInFileWithContents) {
+        return null;
+      }
+
+      // Guards against silently attaching a huge (likely accidental)
+      // selection, e.g. a stray "select all" in a large file, to every
+      // outgoing message with no confirmation.
+      const lineCount =
+        rangeInFileWithContents.range.end.line -
+        rangeInFileWithContents.range.start.line +
+        1;
+      if (lineCount > MAX_AUTO_ATTACH_SELECTION_LINES) {
+        return null;
+      }
+
+      return rangeInFileWithContents;
     });
     this.onWebview("edit/addCurrentSelection", async (msg) => {
       const verticalDiffManager = await this.verticalDiffManagerPromise;
