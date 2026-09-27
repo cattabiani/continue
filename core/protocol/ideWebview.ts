@@ -48,6 +48,7 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
     string | undefined,
   ];
   "edit/addCurrentSelection": [undefined, void];
+  getAutoAttachSelection: [undefined, RangeInFileWithContents | null];
   "edit/clearDecorations": [undefined, void];
   "session/share": [{ sessionId: string }, void];
 };

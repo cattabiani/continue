@@ -23,6 +23,7 @@ import { exitEdit } from "../../../../redux/thunks/edit";
 import { getFontSize, isJetBrains } from "../../../../util";
 import { CodeBlock, Mention, PromptBlock, SlashCommand } from "../extensions";
 import { TipTapEditorProps } from "../TipTapEditor";
+import { autoAttachSelection } from "./autoAttachSelection";
 import {
   getContextProviderDropdownOptions,
   getSlashCommandDropdownOptions,
@@ -87,6 +88,14 @@ export function createEditorConfig(options: {
   const defaultModel = useAppSelector(selectSelectedChatModel);
   const isStreaming = useAppSelector((state) => state.session.isStreaming);
   const useActiveFile = useAppSelector(selectUseActiveFile);
+  const useCurrentSelectionAsContext = useAppSelector(
+    (store) =>
+      store.config.config.experimental?.useCurrentSelectionAsContext ?? false,
+  );
+  const useCurrentSelectionAsContextRef = useUpdatingRef(
+    useCurrentSelectionAsContext,
+  );
+  const isAttachingSelectionRef = useRef(false);
   const historyLength = useAppSelector((store) => store.session.history.length);
   const codeToEdit = useAppSelector((store) => store.editModeState.codeToEdit);
   const isInEdit = useAppSelector((store) => store.session.isInEdit);
@@ -387,7 +396,7 @@ export function createEditorConfig(options: {
     editable: !isStreaming || props.isMainInput,
   });
 
-  const onEnter = (modifiers: InputModifiers) => {
+  const onEnter = async (modifiers: InputModifiers) => {
     if (!editor) {
       return;
     }
@@ -395,12 +404,31 @@ export function createEditorConfig(options: {
       return;
     }
 
-    const json = editor.getJSON();
-
     // Don't do anything if input box doesn't have valid content
-    if (!hasValidEditorContent(json)) {
+    if (!hasValidEditorContent(editor.getJSON())) {
       return;
     }
+
+    // Only VS Code handles getAutoAttachSelection; JetBrains would never
+    // respond, leaving this send hanging.
+    if (
+      props.isMainInput &&
+      !isInEditRef.current &&
+      useCurrentSelectionAsContextRef.current &&
+      !isJetBrains()
+    ) {
+      const shouldSend = await autoAttachSelection(
+        editor,
+        ideMessenger,
+        props.inputId,
+        isAttachingSelectionRef,
+      );
+      if (!shouldSend) {
+        return;
+      }
+    }
+
+    const json = editor.getJSON();
 
     if (props.isMainInput) {
       addRef.current(json);

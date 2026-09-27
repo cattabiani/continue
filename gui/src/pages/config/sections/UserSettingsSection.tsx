@@ -7,6 +7,7 @@ import { Card, Toggle, useFontSize } from "../../../components/ui";
 import { IdeMessengerContext } from "../../../context/IdeMessenger";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { updateConfig } from "../../../redux/slices/configSlice";
+import { isJetBrains } from "../../../util";
 import { setLocalStorage } from "../../../util/localStorage";
 import { ConfigHeader } from "../components/ConfigHeader";
 import { UserSetting } from "../components/UserSetting";
@@ -57,6 +58,8 @@ export function UserSettingsSection() {
   const disableSessionTitles = config.disableSessionTitles ?? false;
   const useCurrentFileAsContext =
     config.experimental?.useCurrentFileAsContext ?? false;
+  const useCurrentSelectionAsContext =
+    config.experimental?.useCurrentSelectionAsContext ?? false;
   const enableExperimentalTools =
     config.experimental?.enableExperimentalTools ?? false;
   const onlyUseSystemMessageTools =
@@ -247,6 +250,17 @@ export function UserSettingsSection() {
                       handleUpdate({ useCurrentFileAsContext: value })
                     }
                   />
+                  {!isJetBrains() && (
+                    <UserSetting
+                      type="toggle"
+                      title="Auto-attach Current Selection"
+                      description=" the current text selection (if any) is attached to every outgoing message, instead of pressing Cmd/Ctrl+Shift+L manually. Selections over 500 lines are skipped; add those manually with Cmd/Ctrl+Shift+L."
+                      value={useCurrentSelectionAsContext}
+                      onChange={(value) =>
+                        handleUpdate({ useCurrentSelectionAsContext: value })
+                      }
+                    />
+                  )}
                   <UserSetting
                     type="toggle"
                     title="Enable experimental tools"

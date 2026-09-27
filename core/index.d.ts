@@ -1687,6 +1687,11 @@ export interface ExperimentalConfig {
   useCurrentFileAsContext?: boolean;
 
   /**
+   * If enabled, will add the current selection (if any) as context.
+   */
+  useCurrentSelectionAsContext?: boolean;
+
+  /**
    * If enabled, @codebase will only use tool calling
    * instead of embeddings, FTS, recently edited files, etc.
    */
