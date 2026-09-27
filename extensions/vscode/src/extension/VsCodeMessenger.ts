@@ -21,6 +21,7 @@ import { ApplyManager } from "../apply";
 import { VerticalDiffManager } from "../diff/vertical/manager";
 import { addCurrentSelectionToEdit } from "../quickEdit/AddCurrentSelection";
 import EditDecorationManager from "../quickEdit/EditDecorationManager";
+import { getRangeInFileWithContents } from "../util/addCode";
 import { handleLLMError } from "../util/errorHandling";
 import { showTutorial } from "../util/tutorial";
 import { getExtensionUri } from "../util/vscode";
@@ -31,6 +32,10 @@ import { VsCodeExtension } from "./VsCodeExtension";
 
 type ToIdeOrWebviewFromCoreProtocol = ToIdeFromCoreProtocol &
   ToWebviewFromCoreProtocol;
+
+// Larger selections are more likely an accidental "select all" than an
+// intended snippet, and would be resent with every message.
+const MAX_AUTO_ATTACH_SELECTION_LINES = 500;
 
 /**
  * A shared messenger class between Core and Webview
@@ -190,6 +195,14 @@ export class VsCodeMessenger {
           msg.data.text,
         );
       });
+    });
+    this.onWebview("getAutoAttachSelection", async () => {
+      const rif = getRangeInFileWithContents(false);
+      if (!rif) {
+        return null;
+      }
+      const lineCount = rif.range.end.line - rif.range.start.line + 1;
+      return lineCount > MAX_AUTO_ATTACH_SELECTION_LINES ? null : rif;
     });
     this.onWebview("edit/addCurrentSelection", async (msg) => {
       const verticalDiffManager = await this.verticalDiffManagerPromise;

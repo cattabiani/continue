@@ -1,6 +1,5 @@
 import { Editor } from "@tiptap/react";
 import { InputModifiers } from "core";
-import { rifWithContentsToContextItem } from "core/commands/util";
 import { MutableRefObject } from "react";
 import { useWebviewListener } from "../../../hooks/useWebviewListener";
 import { useAppSelector } from "../../../redux/hooks";
@@ -8,8 +7,8 @@ import { clearCodeToEdit } from "../../../redux/slices/editState";
 import { setNewestToolbarPreviewForInput } from "../../../redux/slices/sessionSlice";
 import { AppDispatch } from "../../../redux/store";
 import { loadSession, saveCurrentSession } from "../../../redux/thunks/session";
-import { CodeBlock, PromptBlock } from "./extensions";
 import { insertCurrentFileContextMention } from "./utils/insertCurrentFileContextMention";
+import { insertHighlightedCodeBlock } from "./utils/insertHighlightedCodeBlock";
 
 /**
  * Hook for setting up main editor specific webview listeners
@@ -113,34 +112,12 @@ export function useMainEditorWebviewListeners({
     async (data) => {
       if (!editor) return;
 
-      const contextItem = rifWithContentsToContextItem(
+      const { inserted, contextItem } = insertHighlightedCodeBlock(
+        editor,
         data.rangeInFileWithContents,
+        inputId,
       );
-
-      let index = 0;
-      for (const el of editor.getJSON()?.content ?? []) {
-        // Prevent exact duplicate code blocks
-        if (el.attrs?.item?.name === contextItem.name) {
-          return;
-        }
-
-        if (el.type === CodeBlock.name || el.type === PromptBlock.name) {
-          index += 2;
-        } else {
-          break;
-        }
-      }
-
-      editor
-        .chain()
-        .insertContentAt(index, {
-          type: CodeBlock.name,
-          attrs: {
-            item: contextItem,
-            inputId,
-          },
-        })
-        .run();
+      if (!inserted) return;
 
       dispatch(
         setNewestToolbarPreviewForInput({
